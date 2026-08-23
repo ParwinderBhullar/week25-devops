@@ -1,21 +1,27 @@
-name : Deploy to Staging
+name: Deploy to Staging
+
 on:
   push:
     branches:
-      - "main"
+      - main
 
 jobs:
   redeploy_everything:
+    runs-on: ubuntu-latest
     name: Deploying everything to the staging cluster
 
     steps:
-      -name : SSH Into the server
-      -run: |
-         echo ${{secrets.SSH_PRIVATE_KEY}} &> ~/ssh_key
-         ssh -i ~/ssh_key ubuntu@54.211.53.140   
-         cd week25-devops/ && git pull
-         pnpm install
-         pnpm run build
-         pm2 restart http-server
-         pm2 restart web
-         pm2 restart ws-server
+      - name: SSH Into the server
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/ssh_key
+          chmod 600 ~/ssh_key
+
+          ssh -o StrictHostKeyChecking=no -i ~/ssh_key ubuntu@54.211.53.140 << 'EOF'
+            cd ~/week25-devops
+            git pull
+            pnpm install
+            pnpm run build
+            pm2 restart http-server
+            pm2 restart web
+            pm2 restart ws-server
+          EOF
